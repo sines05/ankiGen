@@ -43,7 +43,23 @@ function App() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0])
+      const selectedFile = e.target.files[0]
+      const validExtensions = ['.pdf', '.txt', '.md', '.csv']
+      const fileExtension = '.' + selectedFile.name.split('.').pop()?.toLowerCase()
+
+      if (!validExtensions.includes(fileExtension)) {
+        alert('Invalid file format. Please upload a PDF, TXT, MD, or CSV file.')
+        if (fileInputRef.current) fileInputRef.current.value = ''
+        return
+      }
+
+      if (selectedFile.size > 20 * 1024 * 1024) {
+        alert('File size exceeds the 20MB limit.')
+        if (fileInputRef.current) fileInputRef.current.value = ''
+        return
+      }
+
+      setFile(selectedFile)
     }
   }
 
@@ -152,7 +168,6 @@ function App() {
           <div className="flex justify-between items-center h-16 px-6 lg:px-12 max-w-7xl mx-auto">
               <div className="flex items-center gap-3">
                   <span className="text-xl font-bold tracking-tighter text-slate-900 dark:text-white">Doc2Anki</span>
-                  <span className="hidden md:block px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant text-[10px] font-bold tracking-wider uppercase">Powered by Gemini AI</span>
               </div>
               <div className="flex items-center gap-6">
                   <nav className="hidden md:flex gap-8 items-center">
@@ -187,8 +202,8 @@ function App() {
                               <span className="material-symbols-outlined text-primary text-3xl">upload_file</span>
                           </div>
                           <h3 className="text-xl font-semibold mb-2">{file ? file.name : 'Drag and drop your document'}</h3>
-                          <p className="text-on-surface-variant mb-8">PDF, DOCX, or TXT (Max 20MB)</p>
-                          <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
+                          <p className="text-on-surface-variant mb-8">PDF, TXT, MD, or CSV (Max 20MB)</p>
+                          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf,.txt,.md,.csv" className="hidden" />
                           <button className="px-6 py-3 bg-white text-on-surface font-semibold rounded-xl border border-outline-variant/30 hover:translate-y-[-2px] transition-transform shadow-sm">
                               Browse Files
                           </button>
