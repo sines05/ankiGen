@@ -2,7 +2,7 @@
 
 ![App Screenshot](design/screen.png)
 
-**Doc2Anki** is a modern web application that transforms any document (Text, Images, Audio, Video) into professional Anki study decks (.apkg) in seconds, powered by the latest **Google Gemini (Gemma-4-31b-it)** AI.
+**Doc2Anki** is a modern web application that transforms any document (Text, Images, Audio, Video) into professional Anki study decks (.apkg) in seconds, powered by AI.
 
 ---
 
@@ -10,7 +10,7 @@
 
 - **🎨 Premium Design**: Sleek, modern interface with Glassmorphism effects and native Dark/Light mode support.
 - **🖼️ Multimodal Support**: Beyond just text! Upload PDFs, Images (JPG/PNG), Audio (MP3/WAV), or even Video (MP4) for direct AI analysis.
-- **🧠 Smart AI Engine**: Utilizes `gemma-4-31b-it` to extract core concepts with high precision.
+- **🧠 Smart AI Engine**: Utilizes advanced AI models to extract core concepts with high precision.
 - **🛠️ Flexible Customization**:
     - **Target Language**: Supports Vietnamese, English, Spanish, German, and French.
     - **Card Styles**: Choose between **Standard Key Concepts**, **Multiple Choice (MCQs)**, or **True/False Questions**.
@@ -24,7 +24,7 @@
 
 - **Frontend**: React.js, Vite, Tailwind CSS, Material Symbols.
 - **Backend**: FastAPI (Python), Uvicorn.
-- **AI Engine**: Google GenAI SDK (Gemini File API & Multimodal Processing).
+- **AI Engine**: Advanced Multimodal AI Processing.
 - **Format**: `.apkg` (Anki Export).
 
 ---
@@ -63,7 +63,7 @@ npm run dev
 ## 📂 Project Structure
 
 ```text
-├── backend/            # FastAPI Server & Gemini AI Service
+├── backend/            # FastAPI Server & AI Integration Service
 ├── frontend/           # React App (Vite)
 ├── design/             # UI/UX Assets & Screenshots
 ├── AGENT.md            # Coding Standards & Rules
@@ -75,4 +75,3 @@ npm run dev
 ## 📄 License
 
 This project was developed for educational purposes and personal study optimization.
-*Powered by Gemini AI* 🌟
