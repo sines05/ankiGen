@@ -1,7 +1,7 @@
 /**
  * @file App.tsx
  * @description The main React component for the Doc2Anki application. Manages file upload, state transitions (upload -> loading -> review), background API polling, and Anki package export.
- * @last_modified Added custom prompt feature with pre-defined styles (MCQs, True/False) and custom user instructions.
+ * @last_modified Added 'Auto' mode for max flashcards count, allowing AI to determine the appropriate number of cards.
  */
 
 import { useState, useRef, useEffect } from 'react'
@@ -22,6 +22,7 @@ function App() {
   const [file, setFile] = useState<File | null>(null)
   const [language, setLanguage] = useState('English')
   const [maxCards, setMaxCards] = useState(20)
+  const [isAutoCards, setIsAutoCards] = useState(false)
   const [cardStyle, setCardStyle] = useState('Standard Key Concepts')
   const [customPrompt, setCustomPrompt] = useState('')
   
@@ -77,7 +78,7 @@ function App() {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('language', language)
-    formData.append('max_cards', maxCards.toString())
+    formData.append('max_cards', isAutoCards ? '0' : maxCards.toString())
     
     let finalPrompt = ""
     if (cardStyle === 'Custom Instructions') {
@@ -235,8 +236,33 @@ function App() {
                                   </select>
                               </div>
                               <div className="space-y-2">
-                                  <label className="text-sm font-medium text-on-surface">Max Flashcards</label>
-                                  <input type="number" value={maxCards} onChange={e=>setMaxCards(Number(e.target.value))} className="w-full bg-surface-container-low border-transparent focus:border-primary focus:ring-0 rounded-lg text-sm p-3" />
+                                  <div className="flex justify-between items-center">
+                                      <label className="text-sm font-medium text-on-surface">Max Flashcards</label>
+                                      <label className="flex items-center gap-2 cursor-pointer group">
+                                          <input 
+                                            type="checkbox" 
+                                            checked={isAutoCards} 
+                                            onChange={e=>setIsAutoCards(e.target.checked)} 
+                                            className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/20" 
+                                          />
+                                          <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant group-hover:text-primary transition-colors">Auto</span>
+                                      </label>
+                                  </div>
+                                  {!isAutoCards ? (
+                                    <input 
+                                      type="number" 
+                                      value={maxCards} 
+                                      onChange={e=>setMaxCards(Number(e.target.value))} 
+                                      min={1}
+                                      max={100}
+                                      className="w-full bg-surface-container-low border-transparent focus:border-primary focus:ring-0 rounded-lg text-sm p-3 animate-in fade-in slide-in-from-top-1" 
+                                    />
+                                  ) : (
+                                    <div className="w-full bg-primary-fixed/30 border border-primary/20 rounded-lg text-sm p-3 text-primary font-medium flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                                        <span className="material-symbols-outlined text-sm">magic_button</span>
+                                        AI will decide the best quantity
+                                    </div>
+                                  )}
                               </div>
                               <div className="space-y-2">
                                   <label className="text-sm font-medium text-on-surface">Card Style</label>

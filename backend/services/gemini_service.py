@@ -2,7 +2,7 @@
 /**
  * @file gemini_service.py
  * @description Service to communicate with Google's GenAI API for extracting core concepts from multimodal files (documents, images, audio, video).
- * @last_modified Refined prompts with specific examples for MCQ, True/False, and Standard card styles to ensure high-quality output and clear Front/Back distinction.
+ * @last_modified Fixed JSON parsing error ("Extra data") by prioritizing response.parsed and adding robust JSON extraction fallback.
  */
 """
 import os
@@ -41,8 +41,13 @@ def convert_document_to_json(file_path: str, language: str, max_cards: int, cust
         )
 
         # Base instruction
+        if max_cards > 0:
+            count_instruction = f"extract exactly {max_cards} Flashcards"
+        else:
+            count_instruction = "extract all the most important core concepts into an appropriate number of Flashcards (AI will decide the quantity based on the complexity and length of the content)"
+
         base_instruction = (
-            f"Analyze the provided document (text, images, or audio) and extract the most important core concepts into {max_cards} Flashcards.\n"
+            f"Analyze the provided document (text, images, or audio) and {count_instruction}.\n"
             f"Target Language: {language}\n"
         )
 
@@ -92,10 +97,31 @@ Back: "Mitochondria are membrane-bound cell organelles that generate most of the
             )
         )
         
+        # Prioritize using the SDK's built-in parser for response_schema
+        if response.parsed:
+            return [card.model_dump() for card in response.parsed.cards]
+
         if not response.text:
             return []
             
-        return json.loads(response.text).get("cards", [])
+        # Fallback: Manually extract JSON if there's extra text/code blocks
+        clean_text = response.text.strip()
+        if clean_text.startswith("```json"):
+            clean_text = clean_text.split("```json")[-1].split("```")[0].strip()
+        elif clean_text.startswith("```"):
+            clean_text = clean_text.split("```")[-1].split("```")[0].strip()
+            
+        # Further fallback: Find first { and last }
+        try:
+            start_idx = clean_text.find('{')
+            end_idx = clean_text.rfind('}') + 1
+            if start_idx != -1 and end_idx != 0:
+                clean_text = clean_text[start_idx:end_idx]
+            
+            return json.loads(clean_text).get("cards", [])
+        except Exception:
+            logging.error(f"Failed to parse GEMINI response: {response.text}")
+            return []
         
     finally:
         # 3. Guard clause/Cleanup: Self-destruct remote file after processing guarantees privacy

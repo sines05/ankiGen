@@ -2,7 +2,7 @@
 /**
  * @file main.py
  * @description FastAPI backend entry point for Doc2Anki. Handles document uploads, queues background AI processing, polls status, and returns .apkg files.
- * @last_modified Added file header to comply with AGENT.md coding rules.
+ * @last_modified Sanitized temporary filenames to be ASCII-safe, preventing encoding errors during Gemini File API upload.
  */
 """
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
@@ -70,7 +70,9 @@ async def upload_document(
 ):
     try:
         job_id = str(uuid.uuid4())
-        file_path = os.path.join(UPLOAD_DIR, f"{job_id}_{file.filename}")
+        # Use only job_id and extension for the file path to avoid non-ASCII encoding issues
+        file_extension = os.path.splitext(file.filename)[1]
+        file_path = os.path.join(UPLOAD_DIR, f"{job_id}{file_extension}")
         
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
