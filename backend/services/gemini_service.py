@@ -2,7 +2,7 @@
 /**
  * @file gemini_service.py
  * @description Service to communicate with Google's GenAI API for extracting core concepts from multimodal files (documents, images, audio, video).
- * @last_modified Fixed JSON parsing error ("Extra data") by prioritizing response.parsed and adding robust JSON extraction fallback.
+ * @last_modified Enabled exception raising for parsing failures to support external retry mechanisms.
  */
 """
 import os
@@ -102,7 +102,7 @@ Back: "Mitochondria are membrane-bound cell organelles that generate most of the
             return [card.model_dump() for card in response.parsed.cards]
 
         if not response.text:
-            return []
+            raise ValueError("AI returned an empty response. This might be a transient error.")
             
         # Fallback: Manually extract JSON if there's extra text/code blocks
         clean_text = response.text.strip()
@@ -119,9 +119,9 @@ Back: "Mitochondria are membrane-bound cell organelles that generate most of the
                 clean_text = clean_text[start_idx:end_idx]
             
             return json.loads(clean_text).get("cards", [])
-        except Exception:
-            logging.error(f"Failed to parse GEMINI response: {response.text}")
-            return []
+        except Exception as e:
+            logging.error(f"Failed to parse AI response: {response.text}")
+            raise ValueError(f"Failed to parse AI output into valid flashcards: {str(e)}") from e
         
     finally:
         # 3. Guard clause/Cleanup: Self-destruct remote file after processing guarantees privacy

@@ -2,7 +2,7 @@
 /**
  * @file main.py
  * @description FastAPI backend entry point for Doc2Anki. Handles document uploads, queues background AI processing, polls status, and returns .apkg files.
- * @last_modified Sanitized temporary filenames to be ASCII-safe, preventing encoding errors during Gemini File API upload.
+ * @last_modified Implemented robust AI retry mechanism with exponential backoff and progress notifications.
  */
 """
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
@@ -11,6 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import uuid
 import os
+import logging
+from tenacity import retry, stop_after_attempt, wait_exponential, Retrying, before_sleep_log
 from pydantic import BaseModel
 from typing import List
 
@@ -42,16 +44,30 @@ class ExportRequest(BaseModel):
     cards: List[Flashcard]
 
 def process_document_background(job_id: str, file_path: str, language: str, max_cards: int, custom_prompt: str = ""):
-    job_store[job_id] = {"status": "processing", "progress": "Reading document content..."}
+    job_store[job_id] = {"status": "processing", "progress": "Initializing AI session..."}
     try:
-        job_store[job_id]["progress"] = "Extracting core concepts using AI..."
-        result = convert_document_to_json(file_path, language, max_cards, custom_prompt)
+        def update_progress(retry_state):
+            attempt = retry_state.attempt_number
+            job_store[job_id]["progress"] = f"AI extracting (Attempt {attempt}/3)..."
+            if attempt > 1:
+                logging.warning(f"Retrying job {job_id}: Attempt {attempt}")
+
+        # Use tenacity for robust retrying
+        for attempt in Retrying(
+            stop=stop_after_attempt(3),
+            wait=wait_exponential(multiplier=1, min=2, max=10),
+            before_sleep=update_progress,
+            reraise=True
+        ):
+            with attempt:
+                result = convert_document_to_json(file_path, language, max_cards, custom_prompt)
         
         job_store[job_id] = {
             "status": "completed",
             "data": result
         }
     except Exception as e:
+        logging.error(f"Job {job_id} failed after retries: {e}")
         job_store[job_id] = {
             "status": "failed",
             "error": str(e)
