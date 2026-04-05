@@ -41,11 +41,11 @@ class ExportRequest(BaseModel):
     deck_name: str
     cards: List[Flashcard]
 
-def process_document_background(job_id: str, file_path: str, language: str, max_cards: int):
+def process_document_background(job_id: str, file_path: str, language: str, max_cards: int, custom_prompt: str = ""):
     job_store[job_id] = {"status": "processing", "progress": "Reading document content..."}
     try:
         job_store[job_id]["progress"] = "Extracting core concepts using AI..."
-        result = convert_document_to_json(file_path, language, max_cards)
+        result = convert_document_to_json(file_path, language, max_cards, custom_prompt)
         
         job_store[job_id] = {
             "status": "completed",
@@ -65,7 +65,8 @@ async def upload_document(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     language: str = Form("English"),
-    max_cards: int = Form(20)
+    max_cards: int = Form(20),
+    custom_prompt: str = Form("")
 ):
     try:
         job_id = str(uuid.uuid4())
@@ -75,7 +76,7 @@ async def upload_document(
             shutil.copyfileobj(file.file, buffer)
             
         job_store[job_id] = {"status": "pending", "progress": "In queue..."}
-        background_tasks.add_task(process_document_background, job_id, file_path, language, max_cards)
+        background_tasks.add_task(process_document_background, job_id, file_path, language, max_cards, custom_prompt)
         
         return {"job_id": job_id, "status": "processing"}
     except Exception as e:
