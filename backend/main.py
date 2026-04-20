@@ -15,6 +15,7 @@ import logging
 from tenacity import retry, stop_after_attempt, wait_exponential, Retrying, before_sleep_log
 from pydantic import BaseModel
 from typing import List
+from urllib.parse import quote
 
 from services.gemini_service import convert_document_to_json
 from services.anki_service import export_apkg
@@ -110,8 +111,9 @@ async def get_job_status(job_id: str):
 @app.post("/api/v1/export-apkg")
 async def export_apkg_endpoint(request: ExportRequest):
     file_bytes = export_apkg(request.deck_name, [c.model_dump() for c in request.cards])
+    encoded_filename = quote(f"{request.deck_name}.apkg")
     return Response(
         content=file_bytes,
         media_type="application/octet-stream",
-        headers={"Content-Disposition": f"attachment; filename={request.deck_name}.apkg"}
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
     )
